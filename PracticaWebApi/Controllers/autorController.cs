@@ -104,5 +104,78 @@ namespace PracticaWebApi.Controllers
 
             return Ok(autor);
         }
+
+        //Autores con más libros publicados
+        [HttpGet]
+        [Route("autorConMasLibrosP")]
+        public IActionResult autorMayorLibros()
+        {
+            var autoresMasLibrosP = (from a in _bibliotecaContexto.autor
+                                     join l in _bibliotecaContexto.libro
+                                        on a.id_autor equals l.id_autor
+                                     group a by a.nombre into autores
+                                     select new
+                                     {
+                                         nombreAutor = autores.Key,
+                                         totalLibrosPublicados = autores.Count()
+                                     }).OrderByDescending(res => res.totalLibrosPublicados).Take(2).ToList();
+
+            if(autoresMasLibrosP == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(autoresMasLibrosP);
+        }
+
+        //Verificar si un autor tiene libros publicados
+        [HttpGet]
+        [Route("librosPublicadosAutor")]
+        public IActionResult verLibrosPublicadosA(string name)
+        {
+            var lLibrosPubliA = (from a in _bibliotecaContexto.autor
+                                 join L in _bibliotecaContexto.libro
+                                    on a.id_autor equals L.id_autor
+                                 where a.nombre == name
+                                    group a by a.nombre into autor
+                                 select new
+                                 {
+                                     Nombre = autor.Key,
+                                     CantidadLibrosPublicados = autor.Count()
+                                 }).ToList();
+
+            if(!lLibrosPubliA.Any())
+            {
+                return NotFound(new { mensaje = $"El autor '{name}' no tiene libros publicados." });
+            }
+
+            return Ok(lLibrosPubliA);
+        }
+
+        //Primer libro publicado por cada autor
+        [HttpGet]
+        [Route("primerLibPublicado")]
+        public IActionResult primerLiPubli()
+        {
+            var primerliPubli = (from l in _bibliotecaContexto.libro
+                                 join a in _bibliotecaContexto.autor
+                                    on l.id_autor equals a.id_autor
+                                 where l.anioPublicacion == _bibliotecaContexto.libro
+                                                            .Where(li => li.id_autor == l.id_autor)
+                                                            .Min(li => li.anioPublicacion)
+                                                            select new
+                                                            {
+                                                                NombreAutor = a.nombre,
+                                                                TituloLibro = l.titulo,
+                                                                FechaPublicacion = l.anioPublicacion
+                                                            }).ToList();
+
+            if (primerliPubli.Any())
+            {
+                return Ok(primerliPubli);
+            }
+
+            return BadRequest();
+        }
     }
 }

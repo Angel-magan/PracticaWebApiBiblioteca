@@ -173,5 +173,68 @@ namespace PracticaWebApi.Controllers
             }
             return Ok(listadoPorTitulos);
         }
+        //Obtener libros más recientes
+        [HttpGet]
+        [Route("LibrosRecientes")]
+        public IActionResult LibrosRecientes()
+        {
+            var listraLibrosRecientes = (from l in _bibliotecaContexto.libro
+                                         join a in _bibliotecaContexto.autor
+                                           on l.id_autor equals a.id_autor
+                                         select new
+                                         {
+                                             a.nombre,
+                                             l.titulo,
+                                             l.anioPublicacion
+                                         }).OrderByDescending(res => res.anioPublicacion).Take(3).ToList();
+
+            if (listraLibrosRecientes == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(listraLibrosRecientes);
+        }
+        //Cantidad de libros por año, ingresando año
+        [HttpGet]
+        [Route("cantLibrosAnios")]
+        public IActionResult cantLibrosXAnio(int _anio)
+        {
+            var lCantLibros = (from l in _bibliotecaContexto.libro
+                               where l.anioPublicacion.Year == _anio
+                               group l by l.anioPublicacion into libro
+                               select new
+                               {
+                                   Anio = libro.Key,
+                                   Cantidad = libro.Count()
+                               });
+
+            if(lCantLibros == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(lCantLibros);
+        }
+        //Cantidas de libros por año mostrando todos los años
+        [HttpGet]
+        [Route("cantLibrosAniosAll")]
+        public IActionResult cantLibrosXAnio()
+        {
+            var lCantLibros = (from l in _bibliotecaContexto.libro
+                               group l by l.anioPublicacion into libro
+                               select new
+                               {
+                                   Anio = libro.Key,
+                                   Cantidad = libro.Count()
+                               });
+
+            if (lCantLibros == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(lCantLibros);
+        }
     }
 }
